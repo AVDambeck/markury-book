@@ -22,6 +22,7 @@ parser = argparse.ArgumentParser(description='book rendering tool.')
 parser.add_argument('-v', '--verbose', action='store_true', help='increase verbosity.')
 parser.add_argument('-i', '--input-dir', type=str, help='dir of input files. defaults to parent directory of the script i.e. dir/dir/markuary-book/..')
 parser.add_argument('-o', '--output-dir', type=str, help='output dir. defaults to input_dir/export')
+parser.add_argument('-t', '--types', nargs='*', help='types to include. default is md, jpg, png. using this flag replaces the defaults')
 parser.add_argument('-s', '--css', type=str, help='path to css file. it will be copied to the output dir, inplace of the default css')
 parser.add_argument('-f', '--force', action='store_true', help='delete files in the way.')
 parser.add_argument('--blacklist', nargs='*', help='skip these dirs. Automattically includes output dir and the current dir. automatically prepends inputdir/')
@@ -47,13 +48,19 @@ if args.blacklist is not None:
     for i in args.blacklist:
         blacklist += [f'{input_dir}/{i}']
 
-## css
+## misc
 if args.css is None:
     css_path = f'{current_dir}/default.css'
 else:
     css_path = args.css
 
-## verbosity
+if args.types is None:
+    target_types = ['md', 'jpg', 'png']
+else:
+    target_types = []
+    for i in args.types:
+        target_types += i
+
 if args.verbose is not None:
     pass
     
@@ -107,24 +114,33 @@ def copy_md_structure_and_convert(source_directory, target_directory):
         # Skip blacklisted files
         if any(blacklisted_dir in root for blacklisted_dir in blacklist):
             continue  
+
         # Create corresponding directory in target
         target_root = root.replace(source_directory, target_directory, 1)
         os.makedirs(target_root, exist_ok=True)
 
-        for filename in fnmatch.filter(files, '*.md'):
-            md_file_path = os.path.join(root, filename)
-            # Read the .md file
-            with open(md_file_path, 'r', encoding='utf-8') as md_file:
-                md_content = md_file.read()
+        for filename in files:
+            file_extension = os.path.splitext(filename)[1][1:]  
+            if file_extension in target_types:
+                source_file_path = os.path.join(root, filename)
 
-            # Convert to HTML
-            html_content = convert_md_to_html(md_content, css_filename)
-            html_filename = filename.replace('.md', '.html')
-            html_file_path = os.path.join(target_root, html_filename)
+                if file_extension == 'md':
+                    # Read the .md file
+                    with open(source_file_path, 'r', encoding='utf-8') as md_file:
+                        md_content = md_file.read()
 
-            # Write the HTML to the new file
-            with open(html_file_path, 'w', encoding='utf-8') as html_file:
-                html_file.write(html_content)
+                    # Convert to HTML
+                    html_content = convert_md_to_html(md_content, css_filename)
+                    html_filename = filename.replace('.md', '.html')
+                    html_file_path = os.path.join(target_root, html_filename)
+
+                    # Write the HTML to the new file
+                    with open(html_file_path, 'w', encoding='utf-8') as html_file:
+                        html_file.write(html_content)
+                else:
+                    # jpgs and all other types just get coppied.
+                    target_file_path = os.path.join(target_root, filename)
+                    shutil.copy(source_file_path, target_file_path)
 
 # main
 ensure_dir_empty(output_dir)

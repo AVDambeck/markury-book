@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser(description='book rendering tool.')
 parser.add_argument('-v', '--verbose', action='store_true', help='increase verbosity.')
 parser.add_argument('-i', '--input-dir', type=str, help='dir of input files. defaults to parent directory of the script i.e. dir/dir/markuary-book/..')
 parser.add_argument('-o', '--output-dir', type=str, help='output dir. defaults to input_dir/export')
-parser.add_argument('-t', '--types', nargs='*', help='types to include. default is md, jpg, png. using this flag replaces the defaults')
+parser.add_argument('-t', '--types', nargs='*', help='types to include. default is md, html, css, json, yaml, yml, jpg, jpeg, gif, webm, png. using this flag replaces the defaults')
 parser.add_argument('-s', '--css', type=str, help='path to css file. it will be copied to the output dir, inplace of the default css')
 parser.add_argument('-f', '--force', action='store_true', help='delete files in the way.')
 parser.add_argument('--blacklist', nargs='*', help='skip these dirs. Automattically includes output dir and the current dir. automatically prepends inputdir/')
@@ -55,7 +55,7 @@ else:
     css_path = args.css
 
 if args.types is None:
-    target_types = ['md', 'jpg', 'png']
+    target_types = ['md', 'html', 'css', 'json', 'yaml', 'yml', 'jpg', 'jpeg', 'webm', 'png']
 else:
     target_types = []
     for i in args.types:

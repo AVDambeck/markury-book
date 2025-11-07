@@ -97,7 +97,7 @@ def ensure_dir_empty(dir):
                 exit()
 
 def convert_md_to_html(md_content, css_path):
-    html_content = markdown.markdown(md_content)
+    html_content = markdown.markdown(md_content, extensions=['tables'])
     css_link = f'<link rel="stylesheet" type="text/css" href="{css_path}">'
     return f'<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">{css_link}</head><body>{html_content}</body></html>'
 

@@ -7,6 +7,8 @@ import markdown
 # flags
 flag_index = "%INDEX%"
 flag_gallery = "%GALLERY%"
+flag_name = "%FILENAME%"
+flag_insert = "%INSERT%"
 flags = [flag_index, flag_gallery]
 
 # cli flags

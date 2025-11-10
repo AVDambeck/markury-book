@@ -1,22 +1,15 @@
-'''
-find target dir.
-ensure an empty dir.
-make a list of files.
-make the html.
-make the pdfs.
-combine the pdfs.
-    index.html first, then the rest alphabetically.
-save the final pdf
-'''
-
-# set up
-
 import argparse
 import os
 import shutil
 import fnmatch
 import markdown
 
+# flags
+flag_index = "%INDEX%"
+flag_gallery = "%GALLERY%"
+flags = [flag_index, flag_gallery]
+
+# cli flags
 parser = argparse.ArgumentParser(description='book rendering tool.')
 
 parser.add_argument('-v', '--verbose', action='store_true', help='increase verbosity.')
@@ -64,7 +57,10 @@ else:
 if args.verbose is not None:
     pass
     
+
+
 # define 
+## dirs
 def is_dir_empty(dir):
     if os.path.exists(dir):
         if os.path.isdir(dir):
@@ -82,7 +78,7 @@ def ensure_dir_exists(dir):
 def ensure_dir_empty(dir):
     ensure_dir_exists(dir)
     if is_dir_empty(dir):
-        print('yippee!')
+        return True 
     else:
         if args.force == False:
             print(f'{dir} is not empty. Empty it or use -f')
@@ -92,18 +88,52 @@ def ensure_dir_empty(dir):
                 shutil.rmtree(dir)  
                 os.makedirs(dir)  
                 print(f"Contents of '{dir}' deleted.")
+                return True
             except Exception as e:
                 print(f"An error occurred while clearing the dir: {e}")
                 exit()
 
+## Stream processing
+def respond_flag(md_content, root):
+    if flag_index in md_content:
+        md_content = add_index(md_content, root)
+
+    if flag_gallery in md_content:
+        md_content = add_gallery(md_content, root)
+
+    return md_content
+
+def add_index(md_content, root):
+    index_content = """
+    - foo
+    - bar
+    - bap
+    """
+
+    md_content = md_content.replace(flag_index, index_content)
+    
+    return(md_content)
+
+def add_gallery(md_content, dir):
+    gallery_content = """
+    - foo
+    - bar
+    - bap
+    """
+
+    md_content = md_content.replace(flag_gallery, gallery_content)
+    
+    return(md_content)
+
+## Conversion
 def convert_md_to_html(md_content, css_path):
     html_content = markdown.markdown(md_content, extensions=['tables'])
     css_link = f'<link rel="stylesheet" type="text/css" href="{css_path}">'
     return f'<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">{css_link}</head><body>{html_content}</body></html>'
 
+
 def copy_md_structure_and_convert(source_directory, target_directory):
-    """Copy directory structure and convert .md files to .html in the target directory.
-    this section was ai genorated and then edited"""
+    """Copy directory structure and convert .md files to .html in the target directory."""
 
     # Copy the CSS file to the target directory
     css_filename = "style.css"
@@ -129,6 +159,11 @@ def copy_md_structure_and_convert(source_directory, target_directory):
                     with open(source_file_path, 'r', encoding='utf-8') as md_file:
                         md_content = md_file.read()
 
+                    # Look for flags
+                    for flag in flags:
+                        if flag in md_content:
+                            md_content = respond_flag(md_content, root)
+
                     # Convert to HTML
                     html_content = convert_md_to_html(md_content, css_filename)
                     html_filename = filename.replace('.md', '.html')
@@ -143,5 +178,6 @@ def copy_md_structure_and_convert(source_directory, target_directory):
                     shutil.copy(source_file_path, target_file_path)
 
 # main
-ensure_dir_empty(output_dir)
-copy_md_structure_and_convert(input_dir, output_dir)
+if __name__ == "__main__":
+    ensure_dir_empty(output_dir)
+    copy_md_structure_and_convert(input_dir, output_dir)

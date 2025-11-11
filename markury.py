@@ -106,10 +106,18 @@ def respond_flag(md_content, root):
     return md_content
 
 def add_index(md_content, root):
-    index_content = """
-    - foo
-    - bar
-    - bap
+    # make the index
+    index = ""
+    files = os.listdir(root)
+    files.sort()
+    for filename in files:
+        if filename.endswith("md"):
+            filename = filename.replace("md","html")
+        index += f"\n\n[{filename}]({os.path.join(root, filename)})"
+
+    # add the index
+    index_content = f"""
+    {index}
     """
 
     md_content = md_content.replace(flag_index, index_content)
@@ -166,6 +174,7 @@ def copy_md_structure_and_convert(source_directory, target_directory):
                         if flag in md_content:
                             md_content = respond_flag(md_content, root)
 
+                    md_content = md_content.replace(root, target_root)
                     # Convert to HTML
                     html_content = convert_md_to_html(md_content, css_filename)
                     html_filename = filename.replace('.md', '.html')

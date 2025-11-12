@@ -3,7 +3,7 @@ import os
 import shutil
 import fnmatch
 import markdown
-from weasyprint import HTML
+from weasyprint import HTML, CSS
 
 # flags
 flag_index = "%INDEX%"
@@ -22,6 +22,7 @@ parser.add_argument('-t', '--types', nargs='*', help='types to include. default 
 parser.add_argument('-s', '--css', type=str, help='path to css file. it will be copied to the output dir, inplace of the default css')
 parser.add_argument('-f', '--force', action='store_true', help='delete files in the way.')
 parser.add_argument('--blacklist', nargs='*', help='skip these dirs. Automattically includes output dir and the current dir. automatically prepends inputdir/')
+parser.add_argument('--skip', action='store_true', help='skip pdf export')
 
 args = parser.parse_args()
 
@@ -60,9 +61,14 @@ else:
 if args.verbose is not None:
     pass
     
+if args.skip is None:
+    make_pdf = True
+else:
+    make_pdf = False
 
 
 # define 
+css_filename = "style.css"
 ## dirs
 def is_dir_empty(dir):
     if os.path.exists(dir):
@@ -131,6 +137,8 @@ def add_index(md_content, root):
     for filename in files:
         if filename.endswith("md"):
             filename = filename.replace("md","html")
+        else:
+            filename = f'{filename}/index.html'
         index += f"\n\n[{filename}]({os.path.join(root, filename)})"
 
     # add the index
@@ -156,7 +164,7 @@ def add_gallery(md_content, dir):
 ## Conversion
 def convert_md_to_html(md_content, css_path):
     html_content = markdown.markdown(md_content, extensions=['tables'])
-    css_link = f'<link rel="stylesheet" type="text/css" href="{css_path}">'
+    css_link = f'<link rel="stylesheet" type="text/css" href="{css_filename}">'
     return f'<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">{css_link}</head><body>{html_content}</body></html>'
 
 
@@ -164,7 +172,6 @@ def copy_md_structure_and_convert(source_directory, target_directory):
     """Copy directory structure and convert .md files to .html in the target directory."""
 
     # Copy the CSS file to the target directory
-    css_filename = "style.css"
     target_css_path = os.path.join(target_directory, css_filename)
     shutil.copy(css_path, target_css_path)
 
@@ -176,6 +183,7 @@ def copy_md_structure_and_convert(source_directory, target_directory):
         # Create corresponding directory in target
         target_root = root.replace(source_directory, target_directory, 1)
         os.makedirs(target_root, exist_ok=True)
+        shutil.copy(css_path, f'{target_root}/{css_filename}')
 
         for filename in files:
             file_extension = os.path.splitext(filename)[1][1:]  
@@ -216,10 +224,13 @@ def make_pdf(output_path, source_dir):
         html_content += content
         file.close()
 
-    HTML(string=html_content).write_pdf(output_path)
+    html = HTML(string=html_content)
+    css = CSS(css_path)
+    html.write_pdf(output_path, stylesheets=[css])
 
 # main
 if __name__ == "__main__":
     ensure_dir_empty(output_dir)
     copy_md_structure_and_convert(input_dir, output_dir)
-    make_pdf(f'{output_dir}/document.pdf', output_dir)
+    if make_pdf:
+        make_pdf(f'{output_dir}/document.pdf', output_dir)

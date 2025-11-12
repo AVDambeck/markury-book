@@ -8,8 +8,6 @@ from weasyprint import HTML, CSS
 # flags
 flag_index = "%INDEX%"
 flag_gallery = "%GALLERY%"
-flag_name = "%FILENAME%"
-flag_insert = "%INSERT%"
 flags = [flag_index, flag_gallery]
 
 # cli flags
@@ -52,7 +50,7 @@ else:
     css_path = args.css
 
 if args.types is None:
-    target_types = ['md', 'html', 'css', 'json', 'yaml', 'yml', 'jpg', 'jpeg', 'webm', 'png']
+    target_types = ['md', 'html', 'css', 'json', 'yaml', 'yml', 'jpg', 'jpeg', 'webp', 'png']
 else:
     target_types = []
     for i in args.types:
@@ -114,10 +112,9 @@ def list_html_files(start_directory):
         # Add other .html files
         for file in files:
             if file.endswith('.html') and file != 'index.html':
-                html_files.append(os.path.join(root, file))
+                 html_files.append(os.path.join(root, file))
     
     return html_files
-
 
 ## Stream processing
 def respond_flag(md_content, root):
@@ -150,14 +147,20 @@ def add_index(md_content, root):
     
     return(md_content)
 
-def add_gallery(md_content, dir):
-    gallery_content = """
-    - foo
-    - bar
-    - bap
-    """
+def add_gallery(md_content, root):
+    gallery = ""
+    img_types = ["webp", "png", "gif", "jpg", "jpeg"]
+    img_files = []
 
-    md_content = md_content.replace(flag_gallery, gallery_content)
+    files = os.listdir(root)
+    files.sort()
+    for filename in files:
+        for ext in img_types:
+            if filename.endswith(ext):
+                file_path = os.path.join(root, filename)
+                gallery += f"\n\n![{filename}]({file_path})"
+
+    md_content = md_content.replace(flag_gallery, gallery)
     
     return(md_content)
 

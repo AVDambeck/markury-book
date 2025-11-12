@@ -3,6 +3,7 @@ import os
 import shutil
 import fnmatch
 import markdown
+from weasyprint import HTML
 
 # flags
 flag_index = "%INDEX%"
@@ -38,7 +39,7 @@ if args.output_dir is None:
 else: 
     output_dir = args.output_dir
 
-blacklist = [output_dir, current_dir]
+blacklist = [output_dir, current_dir, f'{input_dir}/ignore']
 if args.blacklist is not None:
     for i in args.blacklist:
         blacklist += [f'{input_dir}/{i}']
@@ -94,6 +95,23 @@ def ensure_dir_empty(dir):
             except Exception as e:
                 print(f"An error occurred while clearing the dir: {e}")
                 exit()
+
+def list_html_files(start_directory):
+    html_files = []
+    
+    # Walk through the directory
+    for root, dirs, files in os.walk(start_directory):
+        # Check for index.html first
+        if 'index.html' in files:
+            html_files.append(os.path.join(root, 'index.html'))
+        
+        # Add other .html files
+        for file in files:
+            if file.endswith('.html') and file != 'index.html':
+                html_files.append(os.path.join(root, file))
+    
+    return html_files
+
 
 ## Stream processing
 def respond_flag(md_content, root):
@@ -188,7 +206,20 @@ def copy_md_structure_and_convert(source_directory, target_directory):
                     target_file_path = os.path.join(target_root, filename)
                     shutil.copy(source_file_path, target_file_path)
 
+def make_pdf(output_path, source_dir):
+    html_content = ""
+    html_file_list = list_html_files(source_dir)
+
+    for html_file in html_file_list:
+        file = open(html_file, "r")
+        content = file.read()
+        html_content += content
+        file.close()
+
+    HTML(string=html_content).write_pdf(output_path)
+
 # main
 if __name__ == "__main__":
     ensure_dir_empty(output_dir)
     copy_md_structure_and_convert(input_dir, output_dir)
+    make_pdf(f'{output_dir}/document.pdf', output_dir)
